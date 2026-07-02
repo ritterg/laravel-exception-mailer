@@ -24,10 +24,12 @@ Distilled as a "best of" from several in-house solutions:
 
 ## Installation
 
-The package is private and distributed via a Composer VCS repository (no Packagist):
+The package is a public GitHub repository, installed via a Composer VCS entry
+(not (yet) on Packagist). No authentication is required — this works on shared
+hosting without tokens or deploy keys:
 
 ```bash
-composer config repositories.exception-mailer vcs git@github.com:ritterg/laravel-exception-mailer.git
+composer config repositories.exception-mailer vcs https://github.com/ritterg/laravel-exception-mailer.git
 composer require ritterg/laravel-exception-mailer:^1.0
 ```
 
@@ -118,7 +120,7 @@ Per project:
 
 ```bash
 composer remove squareboat/sneaker
-composer config repositories.exception-mailer vcs git@github.com:ritterg/laravel-exception-mailer.git
+composer config repositories.exception-mailer vcs https://github.com/ritterg/laravel-exception-mailer.git
 composer require ritterg/laravel-exception-mailer:^1.0
 ```
 
