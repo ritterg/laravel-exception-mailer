@@ -1,0 +1,40 @@
+{
+    "name": "ritterg/laravel-exception-mailer",
+    "description": "Send Laravel exceptions by e-mail with deduplication, global throttling and bot filtering. A maintained, framework-native replacement for squareboat/sneaker.",
+    "keywords": ["laravel", "exception", "mail", "error", "monitoring", "sneaker"],
+    "license": "MIT",
+    "authors": [
+        { "name": "Gerold Ritter", "email": "ritter@e-hist.ch" }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0|^13.0",
+        "illuminate/mail": "^9.0|^10.0|^11.0|^12.0|^13.0",
+        "symfony/error-handler": "^6.0|^7.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "pestphp/pest": "^2.0|^3.0",
+        "larastan/larastan": "^2.0|^3.0"
+    },
+    "autoload": {
+        "psr-4": { "Ritterg\\ExceptionMailer\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Ritterg\\ExceptionMailer\\Tests\\": "tests/" }
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["Ritterg\\ExceptionMailer\\ExceptionMailerServiceProvider"],
+            "aliases": { "ExceptionMailer": "Ritterg\\ExceptionMailer\\Facades\\ExceptionMailer" }
+        }
+    },
+    "config": {
+        "allow-plugins": { "pestphp/pest-plugin": true }
+    },
+    "scripts": {
+        "test": "pest",
+        "analyse": "phpstan analyse"
+    },
+    "prefer-stable": true
+}
