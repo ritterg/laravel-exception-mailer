@@ -16,6 +16,17 @@ it('sends one exception mail', function () {
     Mail::assertSent(ExceptionOccurred::class, 1);
 });
 
+it('renders the request url in the mail body', function () {
+    ExceptionMailer::report(new RuntimeException('boom'));
+
+    Mail::assertSent(ExceptionOccurred::class, function (ExceptionOccurred $mail) {
+        $rendered = $mail->render();
+
+        return str_contains($rendered, $mail->url)
+            && str_contains($rendered, 'exception-url-banner');
+    });
+});
+
 it('deduplicates identical exceptions within the window', function () {
     ExceptionMailer::report(new RuntimeException('boom'));
     ExceptionMailer::report(new RuntimeException('boom'));

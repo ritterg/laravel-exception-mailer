@@ -24,6 +24,10 @@ class ExceptionOccurred extends Mailable
 
     public string $mailSubject;
 
+    public string $url;
+
+    public string $method;
+
     public function __construct(Throwable $exception)
     {
         $flattened = FlattenException::createFromThrowable($exception);
@@ -32,10 +36,13 @@ class ExceptionOccurred extends Mailable
         $this->css = $renderer->getStylesheet();
         $this->content = $renderer->getBody($flattened);
 
+        $this->url = request()->fullUrl();
+        $this->method = request()->method();
+
         $this->mailSubject = trim((string) config('exception-mailer.subject_prefix', config('app.name')))
             .': '.class_basename($exception)
             .' | '.config('app.env')
-            .' | '.request()->fullUrl();
+            .' | '.$this->url;
     }
 
     public function build(): self
@@ -44,6 +51,8 @@ class ExceptionOccurred extends Mailable
             ->view(config('exception-mailer.view'), [
                 'css' => $this->css,
                 'content' => $this->content,
+                'url' => $this->url,
+                'method' => $this->method,
             ]);
 
         if ($from = config('exception-mailer.from')) {
