@@ -31,6 +31,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Subject tag
+    |--------------------------------------------------------------------------
+    | Fixed marker at the very start of every subject this package sends, so a
+    | single mail rule ("subject begins with [Exception]") catches all alerts
+    | from all projects. Set to an empty string to omit it. Every mail also
+    | carries an "X-Exception-Mailer" header for header-based filtering.
+    */
+    'subject_tag' => env('EXCEPTION_MAILER_SUBJECT_TAG', '[Exception]'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Deduplication
     |--------------------------------------------------------------------------
     | An identical exception (same class + message) is mailed only once per

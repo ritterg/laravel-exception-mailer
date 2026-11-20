@@ -53,6 +53,7 @@ EXCEPTION_MAILER_TO="you@example.com"          # comma-separated for several
 # EXCEPTION_MAILER_BCC=
 # EXCEPTION_MAILER_FROM=                        # defaults to mail.from
 # EXCEPTION_MAILER_SUBJECT_PREFIX="My App"
+# EXCEPTION_MAILER_SUBJECT_TAG="[Exception]"    # "" = no tag
 # EXCEPTION_MAILER_DEDUP_MINUTES=10             # 0 = disable dedup
 # EXCEPTION_MAILER_MAX_PER_MINUTE=20            # 0 = disable global throttle
 # EXCEPTION_MAILER_CACHE_STORE=file             # DB-outage resilient
@@ -95,6 +96,29 @@ public function register(): void
 That's it. `report()` never throws: mail failures are logged, not propagated, and it
 never recurses. Laravel's normal logging pipeline is untouched — this is only the
 mail branch.
+
+## Filtering the mails
+
+Every subject starts with a fixed tag, so one mail rule catches all alerts from all
+projects:
+
+```
+[Exception] My App: QueryException | production | https://example.com/person/745
+[Exception] My App: Rate limit exceeded | 203.0.113.7
+```
+
+Each mail also carries machine-readable headers (single-line, max. 300 chars) for
+header-based rules, IMAP searches or scripted triage:
+
+| Header | Example |
+|---|---|
+| `X-Exception-Mailer` | `exception` or `rate-limit` |
+| `X-Exception-App` / `X-Exception-Env` | `My App` / `production` |
+| `X-Exception-Class` | `Illuminate\Database\QueryException` |
+| `X-Exception-Location` | `app/Http/Controllers/PersonController.php:42` (first frame outside `vendor/`) |
+| `X-Exception-Fingerprint` | `3f9c0a1b2d4e` (class + location; stable across messages) |
+| `X-Exception-Message` | shortened exception message |
+| `X-Exception-Url` / `X-Exception-Ip` | request URL / client IP (rate-limit alert) |
 
 ## Testing delivery
 

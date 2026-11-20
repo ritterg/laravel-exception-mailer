@@ -27,6 +27,75 @@ it('renders the request url in the mail body', function () {
     });
 });
 
+it('starts the subject with the fixed tag', function () {
+    config()->set('exception-mailer.subject_prefix', 'My App');
+
+    ExceptionMailer::report(new RuntimeException('boom'));
+
+    Mail::assertSent(ExceptionOccurred::class, function (ExceptionOccurred $mail) {
+        return str_starts_with($mail->mailSubject, '[Exception] My App: RuntimeException | ');
+    });
+});
+
+it('tags the subject even when a published config lacks the key', function () {
+    $config = config('exception-mailer');
+    unset($config['subject_tag']);
+    config()->set('exception-mailer', $config);
+
+    ExceptionMailer::report(new RuntimeException('boom'));
+
+    Mail::assertSent(ExceptionOccurred::class, fn (ExceptionOccurred $mail) => str_starts_with($mail->mailSubject, '[Exception] '));
+});
+
+it('omits the tag when configured empty', function () {
+    config()->set('exception-mailer.subject_tag', '');
+    config()->set('exception-mailer.subject_prefix', 'My App');
+
+    ExceptionMailer::report(new RuntimeException('boom'));
+
+    Mail::assertSent(ExceptionOccurred::class, fn (ExceptionOccurred $mail) => str_starts_with($mail->mailSubject, 'My App: '));
+});
+
+it('adds X-Exception headers once', function () {
+    $mail = new ExceptionOccurred(new RuntimeException("multi\nline message"));
+    $mail->render(); // build() runs here and again on send
+
+    $message = new Symfony\Component\Mime\Email();
+    $mail->build();
+    foreach ((fn () => $this->callbacks)->call($mail) as $callback) {
+        $callback($message);
+    }
+    $headers = $message->getHeaders();
+
+    expect(iterator_to_array($headers->all('X-Exception-Mailer')))->toHaveCount(1)
+        ->and($headers->get('X-Exception-Mailer')->getBodyAsString())->toBe('exception')
+        ->and($headers->get('X-Exception-Class')->getBodyAsString())->toBe('RuntimeException')
+        ->and($headers->get('X-Exception-Message')->getBodyAsString())->toBe('multi line message')
+        ->and($headers->get('X-Exception-Fingerprint')->getBodyAsString())->toBe($mail->fingerprint)
+        // Testbench's base_path() lives inside vendor/, so the test file stays absolute here.
+        ->and($mail->location)->toContain('tests/Feature/ExceptionMailerTest.php:');
+});
+
+it('locates the first frame outside vendor', function () {
+    // Created via a closure so the first trace frame is this test file.
+    $make = fn () => new RuntimeException('x');
+    $exception = $make();
+    $reflection = new ReflectionProperty(Exception::class, 'file');
+    $reflection->setValue($exception, '/srv/app/vendor/laravel/framework/Foo.php');
+
+    expect(ExceptionOccurred::appLocation($exception))
+        ->toContain('tests/Feature/ExceptionMailerTest.php:')
+        ->not->toContain('/vendor/laravel/');
+});
+
+it('tags the rate-limit alert subject', function () {
+    config()->set('exception-mailer.rate_limit_alert.enabled', true);
+
+    ExceptionMailer::report(new TooManyRequestsHttpException());
+
+    Mail::assertSent(RateLimitExceeded::class, fn (RateLimitExceeded $mail) => str_starts_with($mail->build()->subject, '[Exception] '));
+});
+
 it('deduplicates identical exceptions within the window', function () {
     ExceptionMailer::report(new RuntimeException('boom'));
     ExceptionMailer::report(new RuntimeException('boom'));

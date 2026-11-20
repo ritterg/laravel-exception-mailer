@@ -5,6 +5,7 @@ namespace Ritterg\ExceptionMailer\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Ritterg\ExceptionMailer\Mail\Concerns\TagsExceptionMail;
 
 /**
  * Slim abuse alert sent when an IP trips a request rate limit (HTTP 429).
@@ -12,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
  */
 class RateLimitExceeded extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, TagsExceptionMail;
 
     public function __construct(
         public string $ip,
@@ -24,10 +25,12 @@ class RateLimitExceeded extends Mailable
 
     public function build(): self
     {
-        $subject = trim((string) config('exception-mailer.subject_prefix', config('app.name')))
-            .': Rate limit exceeded | '.$this->ip;
+        $this->addExceptionHeaders('rate-limit', [
+            'Ip' => $this->ip,
+            'Url' => $this->url,
+        ]);
 
-        $mail = $this->subject($subject)
+        $mail = $this->subject($this->taggedSubject('Rate limit exceeded | '.$this->ip))
             ->view(config('exception-mailer.rate_limit_alert.view'), [
                 'ip' => $this->ip,
                 'url' => $this->url,
